@@ -9,5 +9,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r name, }
 3*3
+3+3
 ```
 
