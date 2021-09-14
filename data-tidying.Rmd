@@ -58,13 +58,69 @@ catch_data[i, ]
 
 
 ```{r}
-catch_clean <- catch_data%>%
-  mutate(Chinook=if_else(Chinook=="I", "1", Chinook),
-         Chinook=as.integer(Chinook))
+catch_clean <- catch_data %>%
+  mutate(Chinook=if_else(Chinook=="I", "1", Chinook))%>%
+  mutate(Chinook=as.integer(Chinook))
+
+head(catch_clean)
 ```
 
 
 * Reshape data 
 
+
+```{r}
+catch_long <- catch_clean %>%
+  pivot_longer(-c(Region, Year), names_to="species", values_to="catch")
+
+catch_long
+```
+
+
+```{r}
+catch_wide <- catch_long %>%
+  pivot_wider(names_from="species", values_from="catch")
+```
+
+
+```{r}
+catch_long <- catch_long %>%
+  rename(catch_thousands=catch) %>%
+  mutate(catch=catch_thousands*1000)
+```
+
+* group and summarize data
+
+```{r}
+mean_region <- catch_long %>%
+  group_by(Region)%>%
+  summarise(catch_mean=mean(catch, na.rm=T), .groups="drop")
+
+mean_region
+```
+
+```{r}
+mean_year<-catch_long%>%
+  group_by(Year)%>%
+  summarise(catch_mean=mean(catch, na.rm=T), .groups="drop")
+
+mean_year
+```
+
+
 ## Join to Regions Definitions
+
+```{r}
+region_defs <- read.csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1") %>% 
+  select(Region=code, mgmtArea)
+
+head(region_defs)
+```
+
+
+```{r}
+catch_joined <- left_join(catch_long, region_defs, by="Region")
+
+catch_joined
+```
 

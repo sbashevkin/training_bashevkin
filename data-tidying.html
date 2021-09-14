@@ -240,15 +240,123 @@ i</code></pre>
 <pre class="r"><code>catch_data[i, ]</code></pre>
 <pre><code>##     Region Year Chinook Sockeye Coho Pink Chum
 ## 401    GSE 1955       I      66    0    0    1</code></pre>
-<pre class="r"><code>catch_clean &lt;- catch_data%&gt;%
-  mutate(Chinook=if_else(Chinook==&quot;I&quot;, &quot;1&quot;, Chinook),
-         Chinook=as.integer(Chinook))</code></pre>
+<pre class="r"><code>catch_clean &lt;- catch_data %&gt;%
+  mutate(Chinook=if_else(Chinook==&quot;I&quot;, &quot;1&quot;, Chinook))%&gt;%
+  mutate(Chinook=as.integer(Chinook))
+
+head(catch_clean)</code></pre>
+<pre><code>##   Region Year Chinook Sockeye Coho Pink Chum
+## 1    SSE 1886       0       5    0    0    0
+## 2    SSE 1887       0     155    0    0    0
+## 3    SSE 1888       0     224   16    0    0
+## 4    SSE 1889       0     182   11   92    0
+## 5    SSE 1890       0     251   42    0    0
+## 6    SSE 1891       0     274   24    0    0</code></pre>
 <ul>
 <li>Reshape data</li>
 </ul>
+<pre class="r"><code>catch_long &lt;- catch_clean %&gt;%
+  pivot_longer(-c(Region, Year), names_to=&quot;species&quot;, values_to=&quot;catch&quot;)
+
+catch_long</code></pre>
+<pre><code>## # A tibble: 8,540 × 4
+##    Region  Year species catch
+##    &lt;chr&gt;  &lt;int&gt; &lt;chr&gt;   &lt;int&gt;
+##  1 SSE     1886 Chinook     0
+##  2 SSE     1886 Sockeye     5
+##  3 SSE     1886 Coho        0
+##  4 SSE     1886 Pink        0
+##  5 SSE     1886 Chum        0
+##  6 SSE     1887 Chinook     0
+##  7 SSE     1887 Sockeye   155
+##  8 SSE     1887 Coho        0
+##  9 SSE     1887 Pink        0
+## 10 SSE     1887 Chum        0
+## # … with 8,530 more rows</code></pre>
+<pre class="r"><code>catch_wide &lt;- catch_long %&gt;%
+  pivot_wider(names_from=&quot;species&quot;, values_from=&quot;catch&quot;)</code></pre>
+<pre class="r"><code>catch_long &lt;- catch_long %&gt;%
+  rename(catch_thousands=catch) %&gt;%
+  mutate(catch=catch_thousands*1000)</code></pre>
+<ul>
+<li>group and summarize data</li>
+</ul>
+<pre class="r"><code>mean_region &lt;- catch_long %&gt;%
+  group_by(Region)%&gt;%
+  summarise(catch_mean=mean(catch, na.rm=T), .groups=&quot;drop&quot;)
+
+mean_region</code></pre>
+<pre><code>## # A tibble: 18 × 2
+##    Region catch_mean
+##    &lt;chr&gt;       &lt;dbl&gt;
+##  1 ALU        40384.
+##  2 BER        16373.
+##  3 BRB      2709796.
+##  4 CHG       315487.
+##  5 CKI       683571.
+##  6 COP       179223.
+##  7 GSE       133841.
+##  8 KOD      1528350 
+##  9 KSK        67642.
+## 10 KTZ        18836.
+## 11 NOP       229493.
+## 12 NRS        51503.
+## 13 NSE      1825021.
+## 14 PWS      1419237.
+## 15 SOP      1110942.
+## 16 SSE      3184661.
+## 17 YAK        91923.
+## 18 YUK        68646.</code></pre>
+<pre class="r"><code>mean_year&lt;-catch_long%&gt;%
+  group_by(Year)%&gt;%
+  summarise(catch_mean=mean(catch, na.rm=T), .groups=&quot;drop&quot;)
+
+mean_year</code></pre>
+<pre><code>## # A tibble: 120 × 2
+##     Year catch_mean
+##    &lt;int&gt;      &lt;dbl&gt;
+##  1  1878          0
+##  2  1879          0
+##  3  1880          0
+##  4  1881          0
+##  5  1882       5900
+##  6  1883      19800
+##  7  1884      21250
+##  8  1885      24750
+##  9  1886      30560
+## 10  1887      52120
+## # … with 110 more rows</code></pre>
 </div>
 <div id="join-to-regions-definitions" class="section level2">
 <h2>Join to Regions Definitions</h2>
+<pre class="r"><code>region_defs &lt;- read.csv(&quot;https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1&quot;) %&gt;% 
+  select(Region=code, mgmtArea)
+
+head(region_defs)</code></pre>
+<pre><code>##    Region                                  mgmtArea
+## 1     GSE              Unallocated Southeast Alaska
+## 2     NSE                 Northern Southeast Alaska
+## 3     SSE                 Southern Southeast Alaska
+## 4     YAK                                   Yakutat
+## 5 PWSmgmt      Prince William Sound Management Area
+## 6     BER Bering River Subarea Copper River Subarea</code></pre>
+<pre class="r"><code>catch_joined &lt;- left_join(catch_long, region_defs, by=&quot;Region&quot;)
+
+catch_joined</code></pre>
+<pre><code>## # A tibble: 8,540 × 6
+##    Region  Year species catch_thousands  catch mgmtArea                 
+##    &lt;chr&gt;  &lt;int&gt; &lt;chr&gt;             &lt;int&gt;  &lt;dbl&gt; &lt;chr&gt;                    
+##  1 SSE     1886 Chinook               0      0 Southern Southeast Alaska
+##  2 SSE     1886 Sockeye               5   5000 Southern Southeast Alaska
+##  3 SSE     1886 Coho                  0      0 Southern Southeast Alaska
+##  4 SSE     1886 Pink                  0      0 Southern Southeast Alaska
+##  5 SSE     1886 Chum                  0      0 Southern Southeast Alaska
+##  6 SSE     1887 Chinook               0      0 Southern Southeast Alaska
+##  7 SSE     1887 Sockeye             155 155000 Southern Southeast Alaska
+##  8 SSE     1887 Coho                  0      0 Southern Southeast Alaska
+##  9 SSE     1887 Pink                  0      0 Southern Southeast Alaska
+## 10 SSE     1887 Chum                  0      0 Southern Southeast Alaska
+## # … with 8,530 more rows</code></pre>
 </div>
 
 
