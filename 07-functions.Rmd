@@ -1,0 +1,98 @@
+---
+title: "07-functions"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Functions tutorial
+
+## Set up some test data
+
+```{r load-data}
+airtemps <- c(212, 30.3, 78, 32)
+
+celsius1 <- (airtemps[1]-32)*5/9
+celsius2 <- (airtemps[2]-32)*5/9
+celsius3 <- (airtemps[3]-32)*5/9
+celsius4 <- (airtemps[4]-32)*5/9
+```
+
+## Define a function
+
+```{r create-function}
+fahr_to_celsius <- function(fahr){
+  celsius <- (fahr-32)*5/9
+  return(celsius)
+}
+```
+
+
+```{r test-function}
+celsius5<-fahr_to_celsius(airtemps[1])
+
+celsius5
+
+celsius5==celsius1
+```
+
+
+```{r vectorized}
+celsius<-fahr_to_celsius(airtemps)
+
+celsius
+```
+
+
+```{r inverse-function}
+celsius_to_fahr <- function(celsius){
+  fahr <- celsius*9/5 + 32
+  return(fahr)
+}
+
+all(celsius_to_fahr(celsius)==airtemps)
+```
+
+
+```{r}
+convert_temps <- function(fahr){
+  celsius <- (fahr-32)*5/9
+  kelvin <- celsius+273.15
+  return(list(fahr=fahr, celsius=celsius, kelvin=kelvin))
+}
+
+temps_df<-data.frame(convert_temps(seq(-100, 100, by=10)))
+temps_df
+```
+
+
+```{r themes}
+custom_theme <- function(base_size=9){
+  ggplot2::theme(
+    axis.ticks = ggplot2::element_blank(),
+    text = ggplot2::element_text(family='Helvetica', color='gray30', size=base_size)
+  )
+}
+
+library(ggplot2)
+
+ggplot(temps_df, aes(x=fahr, y=celsius, color=kelvin))+
+  geom_point()+
+  custom_theme(10)
+```
+
+
+```{r}
+scatterplot <- function(df, point_size = 2, font_size=9) {
+  ggplot(df, mapping=aes(x=fahr, y=celsius, color=kelvin)) +
+    geom_point(size=point_size) +
+    custom_theme(font_size)
+}
+
+scatterplot(temps_df)
+```
+
