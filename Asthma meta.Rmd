@@ -1,0 +1,44 @@
+---
+title: "Asthma meta"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(metafor)
+require(readr)
+require(dplyr)
+require(broom)
+```
+
+```{r}
+data<-read.csv("https://figshare.com/ndownloader/files/14460386")
+```
+
+```{r}
+data_meta<-escalc(measure = "ROM", m1i= Me, sd1i= Se, n1i=Ne, m2i= Mc, sd2i= Sc, n2i= Nc, data = data,  append = TRUE)
+
+res1 <- rma(yi = yi, sei = vi, method = "ML", test = "knha", control=list(stepadj=0.5), data = data_meta)
+
+r1 <- tidy(res1) %>% 
+  filter(term != "intercept")
+
+knitr::kable(r1)
+```
+
+
+Does the effect change over time
+```{r}
+res2 <- rma(yi = yi, sei = vi, mod=~year, method = "ML", test = "knha", control=list(stepadj=0.5), data = data_meta)
+
+r2 <- tidy(res2)
+
+knitr::kable(r2)
+```
+
+No
