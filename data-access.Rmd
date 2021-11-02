@@ -1,0 +1,59 @@
+---
+title: "data-access"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Packages
+```{r}
+library(readr)
+library(contentid)
+library(pins)
+```
+
+
+# Demo of the pins package
+
+```{r}
+delta_sites_edi <- 'https://portal.edirepository.org/nis/dataviewer?packageid=edi.233.2&entityid=6a82451e84be1fe82c9821f30ffc2d7d'
+delta_sites_edi_pin<-pins::pin(delta_sites_edi)
+delta_sites <- readr::read_csv(delta_sites_edi_pin, show_col_types = FALSE)
+head(delta_sites)
+```
+
+But pins doesn't track versioning of datasets. It only points to a URL
+You can use option verify=TRUE, in which case it downloads the dataset and compares to the version on disk. But this requires it to re-download every time. 
+
+DOIs are a reference to a data set, but not to single data files. DOIs link to landing page for dataset, not to the locations of the single files. 
+
+# Resolving data with contentID
+```{r}
+library(contentid)
+delta_catch_edi <- 'https://portal.edirepository.org/nis/dataviewer?packageid=edi.233.2&entityid=015e494911cf35c90089ced5a3127334'
+delta_catch_dataone <- 'https://cn.dataone.org/cn/v2/resolve/https%3A%2F%2Fpasta.lternet.edu%2Fpackage%2Fdata%2Feml%2Fedi%2F233%2F2%2F015e494911cf35c90089ced5a3127334'
+delta_taxa_edi <- 'https://portal.edirepository.org/nis/dataviewer?packageid=edi.233.2&entityid=0532048e856d4bd07deea11583b893dd'
+delta_effort_edi <- 'https://portal.edirepository.org/nis/dataviewer?packageid=edi.233.2&entityid=ace1ef25f940866865d24109b7250955'
+
+# Store edi version of catch table with content identifier
+delta_catch_id<-store(delta_catch_edi)
+
+# Check that EDI version is the same as dataone version
+delta_catch_id_dataone<-store(delta_catch_dataone)
+delta_catch_id==delta_catch_id_dataone
+
+# Find path on local machine to this file
+retrieve(delta_catch_id)
+
+# read in the file
+delta_catch <- read_csv(retrieve(delta_catch_id))
+
+# Or can just use resolve function instead of retrieve
+delta_catch_file<-resolve(delta_catch_id, store=TRUE)
+delta_catch <- read_csv(delta_catch_file)
+```
+
