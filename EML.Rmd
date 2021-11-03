@@ -1,0 +1,42 @@
+---
+title: "EML"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Compose a single document
+
+```{r}
+library(EML)
+
+me<-list(givenName = "Sam",
+         surName = "Bashevkin")
+
+me
+
+me <- eml$individualName(givenName = "Sam",
+                         surName = "Bashevkin")
+
+me
+
+doc <- list(
+  packageId = "dataset-1", 
+  system = "local",
+  dataset = eml$dataset(title = "A minimal valid EML dataset",
+                        creator = eml$creator(individualName = me),
+                        contact = eml$contact(individualName = me)))
+
+doc
+```
+
+Is EML valid?
+```{r}
+eml_validate(doc)
+write_eml(doc, "simple_example.xml")
+```
+
