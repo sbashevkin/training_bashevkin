@@ -1,0 +1,76 @@
+---
+title: "parallel"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+x <- iris[which(iris[,5] != "setosa"), c(1,5)]
+trials <- 10000
+res <- data.frame()
+system.time({
+  trial <- 1
+  while(trial <= trials) {
+    ind <- sample(100, 100, replace=TRUE)
+    result1 <- glm(x[ind,2]~x[ind,1], family=binomial(logit))
+    r <- coefficients(result1)
+    res <- rbind(res, r)
+    trial <- trial + 1
+  }
+})
+```
+
+
+```{r}
+x <- iris[which(iris[,5] != "setosa"), c(1,5)]
+trials <- seq(1, 10000)
+boot_fx <- function(trial) {
+  ind <- sample(100, 100, replace=TRUE)
+  result1 <- glm(x[ind,2]~x[ind,1], family=binomial(logit))
+  r <- coefficients(result1)
+  res <- rbind(data.frame(), r)
+}
+system.time({
+  results <- lapply(trials, boot_fx)
+})
+```
+
+lapply in parallel
+```{r}
+library(parallel)
+library(MASS)
+
+numCores <- detectCores()
+numCores
+
+system.time({
+  results <- mclapply(trials, boot_fx, mc.cores = numCores)
+})
+```
+
+foreach and doparallel
+```{r}
+for (i in 1:3) {
+  print(sqrt(i))
+}
+```
+
+```{r}
+library(foreach)
+foreach (i=1:3) %do% {
+  sqrt(i)
+}
+```
+
+```{r}
+library(doParallel)
+
+registerDoParallel(numCores)  # use multicore, set to the number of our cores
+foreach (i=1:3, .combine=c) %dopar% {
+  sqrt(i)
+}
+```
+
